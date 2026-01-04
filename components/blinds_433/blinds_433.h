@@ -14,6 +14,7 @@ struct QueuedCommand {
   uint8_t blind_id;
   uint8_t cmd;
   int repeats;
+  int retries_remaining;
 };
 
 class Blinds433Hub : public Component {

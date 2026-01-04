@@ -11,8 +11,8 @@ static constexpr uint32_t HALF_BIT_US = 640;
 static constexpr uint32_t PREAMBLE_US = 6800;
 static constexpr uint32_t FRAME_GAP_US = 25000;
 
-// Minimum time between commands (ms) - accounts for full transmission + margin
-static constexpr uint32_t COMMAND_SPACING_MS = 500;
+// Minimum time between commands (ms)
+static constexpr uint32_t COMMAND_SPACING_MS = 50;
 
 static constexpr uint8_t CMD_STOP = 0x01;
 static constexpr uint8_t CMD_UP = 0x02;
@@ -37,9 +37,15 @@ void Blinds433Hub::loop() {
   QueuedCommand cmd = queue_.front();
   queue_.erase(queue_.begin());
 
-  ESP_LOGD(TAG, "Processing queued command (remaining: %d)", queue_.size());
+  ESP_LOGD(TAG, "Processing command (remaining: %d, retries left: %d)", queue_.size(), cmd.retries_remaining);
   send_command_(cmd);
   last_send_time_ = millis();
+
+  // Re-queue retries at the back
+  if (cmd.retries_remaining > 0) {
+    cmd.retries_remaining--;
+    queue_.push_back(cmd);
+  }
 }
 
 void Blinds433Hub::queue_command(uint32_t remote_id, uint8_t blind_id, uint8_t cmd, int repeats) {
@@ -48,6 +54,7 @@ void Blinds433Hub::queue_command(uint32_t remote_id, uint8_t blind_id, uint8_t c
   qc.blind_id = blind_id;
   qc.cmd = cmd;
   qc.repeats = repeats;
+  qc.retries_remaining = 2;  // Will send 3 times total (1 + 2 retries)
 
   queue_.push_back(qc);
   ESP_LOGD(TAG, "Queued command 0x%02X for remote 0x%06X blind %d (queue size: %d)",
@@ -135,22 +142,16 @@ cover::CoverTraits Blinds433Cover::get_traits() {
 
 void Blinds433Cover::control(const cover::CoverCall &call) {
   if (call.get_stop()) {
-    for (int i = 0; i < 3; i++) {
-      hub_->queue_command(remote_id_, blind_id_, CMD_STOP);
-    }
+    hub_->queue_command(remote_id_, blind_id_, CMD_STOP);
   }
   if (call.get_position().has_value()) {
     float pos = *call.get_position();
     if (pos == cover::COVER_OPEN) {
-      for (int i = 0; i < 3; i++) {
-        hub_->queue_command(remote_id_, blind_id_, CMD_UP);
-      }
+      hub_->queue_command(remote_id_, blind_id_, CMD_UP);
       this->position = cover::COVER_OPEN;
       this->publish_state();
     } else if (pos == cover::COVER_CLOSED) {
-      for (int i = 0; i < 3; i++) {
-        hub_->queue_command(remote_id_, blind_id_, CMD_DOWN);
-      }
+      hub_->queue_command(remote_id_, blind_id_, CMD_DOWN);
       this->position = cover::COVER_CLOSED;
       this->publish_state();
     }
