@@ -135,14 +135,24 @@ cover::CoverTraits Blinds433Cover::get_traits() {
 
 void Blinds433Cover::control(const cover::CoverCall &call) {
   if (call.get_stop()) {
-    hub_->queue_command(remote_id_, blind_id_, CMD_STOP);
+    for (int i = 0; i < 3; i++) {
+      hub_->queue_command(remote_id_, blind_id_, CMD_STOP);
+    }
   }
   if (call.get_position().has_value()) {
     float pos = *call.get_position();
     if (pos == cover::COVER_OPEN) {
-      hub_->queue_command(remote_id_, blind_id_, CMD_UP);
+      for (int i = 0; i < 3; i++) {
+        hub_->queue_command(remote_id_, blind_id_, CMD_UP);
+      }
+      this->position = cover::COVER_OPEN;
+      this->publish_state();
     } else if (pos == cover::COVER_CLOSED) {
-      hub_->queue_command(remote_id_, blind_id_, CMD_DOWN);
+      for (int i = 0; i < 3; i++) {
+        hub_->queue_command(remote_id_, blind_id_, CMD_DOWN);
+      }
+      this->position = cover::COVER_CLOSED;
+      this->publish_state();
     }
   }
 }
