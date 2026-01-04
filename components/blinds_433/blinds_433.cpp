@@ -42,8 +42,7 @@ void Blinds433Hub::loop() {
   last_send_time_ = millis();
 }
 
-void Blinds433Hub::queue_command(uint32_t remote_id, uint8_t blind_id,
-                                 uint8_t cmd, int repeats) {
+void Blinds433Hub::queue_command(uint32_t remote_id, uint8_t blind_id, uint8_t cmd, int repeats) {
   QueuedCommand qc;
   qc.remote_id = remote_id;
   qc.blind_id = blind_id;
@@ -51,8 +50,7 @@ void Blinds433Hub::queue_command(uint32_t remote_id, uint8_t blind_id,
   qc.repeats = repeats;
 
   queue_.push_back(qc);
-  ESP_LOGD(TAG,
-           "Queued command 0x%02X for remote 0x%06X blind %d (queue size: %d)",
+  ESP_LOGD(TAG, "Queued command 0x%02X for remote 0x%06X blind %d (queue size: %d)",
            cmd, remote_id, blind_id, queue_.size());
 }
 
@@ -77,11 +75,9 @@ void Blinds433Hub::send_command_(const QueuedCommand &cmd) {
   data[5] = (cmd.remote_id >> 8) & 0xFF;
   data[6] = cmd.remote_id & 0xFF;
 
-  data[7] =
-      (data[1] + data[2] + data[3] + data[4] + data[5] + data[6] + 0x2B) & 0xFF;
+  data[7] = (data[1] + data[2] + data[3] + data[4] + data[5] + data[6] + 0x2B) & 0xFF;
 
-  ESP_LOGD(TAG, "Sending command 0x%02X to remote 0x%06X blind %d", cmd.cmd,
-           cmd.remote_id, cmd.blind_id);
+  ESP_LOGD(TAG, "Sending command 0x%02X to remote 0x%06X blind %d", cmd.cmd, cmd.remote_id, cmd.blind_id);
 
   for (int i = 0; i < cmd.repeats; i++) {
     send_frame_(data, i);
@@ -90,12 +86,12 @@ void Blinds433Hub::send_command_(const QueuedCommand &cmd) {
 }
 
 void Blinds433Hub::send_bit_(uint8_t b) {
-  if (b) { // 1 = LOW-HIGH
+  if (b) {  // 1 = LOW-HIGH
     pin_->digital_write(false);
     delayMicroseconds(HALF_BIT_US);
     pin_->digital_write(true);
     delayMicroseconds(HALF_BIT_US);
-  } else { // 0 = HIGH-LOW
+  } else {  // 0 = HIGH-LOW
     pin_->digital_write(true);
     delayMicroseconds(HALF_BIT_US);
     pin_->digital_write(false);
@@ -130,7 +126,7 @@ void Blinds433Hub::send_frame_(uint8_t *data, uint32_t frame_num) {
 
 cover::CoverTraits Blinds433Cover::get_traits() {
   auto traits = cover::CoverTraits();
-  traits.set_is_assumed_state(false);
+  traits.set_is_assumed_state(true);
   traits.set_supports_position(false);
   traits.set_supports_tilt(false);
   traits.set_supports_stop(true);
@@ -151,5 +147,5 @@ void Blinds433Cover::control(const cover::CoverCall &call) {
   }
 }
 
-} // namespace blinds_433
-} // namespace esphome
+}  // namespace blinds_433
+}  // namespace esphome
