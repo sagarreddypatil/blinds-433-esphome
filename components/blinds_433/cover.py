@@ -13,9 +13,9 @@ CONF_BLIND_ID = "blind_id"
 Blinds433Cover = blinds_433_ns.class_("Blinds433Cover", cover.Cover, cg.Component)
 
 CONFIG_SCHEMA = (
-    cover.COVER_SCHEMA.extend(
+    cover.cover_schema(Blinds433Cover)
+    .extend(
         {
-            cv.GenerateID(): cv.declare_id(Blinds433Cover),
             cv.GenerateID(CONF_BLINDS_433_ID): cv.use_id(Blinds433Hub),
             cv.Required(CONF_REMOTE_ID): cv.hex_uint32_t,
             cv.Required(CONF_BLIND_ID): cv.int_range(min=0, max=15),
